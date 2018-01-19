@@ -1,13 +1,56 @@
 <?php
+$dbname = "usuarios";
+$user = "root";
+$password = "alumno";
+try {
+    $dsn = "mysql:host=localhost;dbname=$dbname";
+    $dbh = new PDO($dsn, $user, $password);
+} catch (PDOException $e){
+    echo $e->getMessage();
+}
+
+
 if (isset($_POST['usuarios'])) {
     $usuarios = $_POST['usuarios'];
 }
 
 if (isset($_POST['username'])) {
     $usuarios[htmlspecialchars($_POST['username'])] = htmlspecialchars($_POST['password']);
-}
 
+
+    // Prepare
+    $stmt = $dbh->prepare("INSERT INTO usuarios (username, password) VALUES (?, ?)");
+    // Bind
+    $username = htmlspecialchars($_POST['username']);
+    $password = htmlspecialchars($_POST['password']);
+    $stmt->bindParam(1, $username);
+    $stmt->bindParam(2, $password);
+    // Excecute
+    $stmt->execute();
+
+}
 if (isset($_POST['login'])) {
+    
+    // FETCH_ASSOC
+        $stmt = $dbh->prepare("SELECT * FROM usuarios WHERE username = ? AND password = ?");
+        // Especificamos el fetch mode antes de llamar a fetch()
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        // Asignamos valores a los parámetros
+        $username = htmlspecialchars($_POST['login']);
+        $password = htmlspecialchars($_POST['password']);
+        $stmt->bindParam(1, $username);
+        $stmt->bindParam(2, $password);
+            // Ejecutamos
+        $stmt->execute();
+        // Mostramos los resultados
+        if ($row = $stmt->fetch()) : ?>
+            Usted se ha autenticado con las siguientes credenciales: <br>
+            Usuario: <?php echo $row["username"] ?><br>
+            Password: <?= $row["password"] ?><br><br>
+        <?php else : ?>
+            Algo ha fallado en el login
+        <?php endif; 
+    
     $loginCorrecto = $usuarios[$_POST['login']] === htmlspecialchars($_POST['password']);
 }
 
@@ -181,6 +224,19 @@ if (isset($_POST['login'])) {
             <?php
                     endforeach;
                 endif;
+            ?>
+            <?php
+            // FETCH_ASSOC
+                $stmt = $dbh->prepare("SELECT * FROM usuarios");
+                // Especificamos el fetch mode antes de llamar a fetch()
+                $stmt->setFetchMode(PDO::FETCH_ASSOC);
+                // Ejecutamos
+                $stmt->execute();
+                // Mostramos los resultados
+                while ($row = $stmt->fetch()){
+                    echo "Usuario: {$row["username"]} <br>";
+                    echo "Password: {$row["password"]} <br><br>";
+                }
             ?>
             <input type="submit" value="registrar"/>
         </form>
